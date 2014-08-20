@@ -1,0 +1,1242 @@
+<?php
+
+/**
+ *
+ *
+ * @version $Id$
+ * @copyright 2005
+ **/
+
+include_once 'LIB_DbConnection.inc';
+
+/**
+ *
+ * @name 		GetSection
+ * @args 		arg[0] = subject_nmbr
+ * @return	resultset array
+ * @desc		get all sections for a given subject
+ *
+ **/
+function GetSection($pFrameNmbr, $pSubjectID, $pSectionNmbr, $pLanguageNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select b.* from PAGE_Subject a, PAGE_Section b "
+				 . "where a.FrameNmbr = " . $pFrameNmbr . " "
+				 . "and a.SubjectID = '" . $pSubjectID . "' "
+				 . "and a.LanguageNmbr = " . $pLanguageNmbr . " "
+				 . "and b.SubjectNmbr = a.SubjectNmbr ";
+	if ($pSectionNmbr != "") $query = $query . "and b.SectionNmbr = " . $pSectionNmbr . " ";
+	if ($pSubjectID == 'PERSONNEL') {
+		$query = $query . "order by b.SectionNmbr desc"; //b.Position";
+	}
+	else {
+		$query = $query . "order by b.CreatedDate desc"; //b.Position";
+	}
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		GetItem
+ * @args 		arg[0] = section_nmbr
+ * @return	resultset array
+ * @desc		get all items for a given section
+ *
+ **/
+function GetItem($pSectionNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select * from PAGE_Item where SectionNmbr = " . $pSectionNmbr;
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		GetCourse
+ * @args 		arg[0] = chinese or other
+ * @return	resultset array
+ * @desc		get all sections for a given subject
+ *
+ **/
+function GetCourse($pCategory, $pCourseNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select * from SCHL_Course "
+				 . "where CourseCategory = '" . $pCategory . "'";
+	if ($pCourseNmbr != "") $query = $query . " and CourseNmbr = " . $pCourseNmbr;
+
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		GetTuitionFee
+ * @args 		arg[0] = chinese or other
+ * @return	resultset array
+ * @desc		get all sections for a given subject
+ *
+ **/
+function GetTuitionFee($pCourseNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select b.* from SCHL_Course a, REF_CourseCategory b "
+				 . "where "
+				 . "b.CourseCategoryNmbr = a.CourseCategoryNmbr and a.CourseNmbr = " . $pCourseNmbr;
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		CheckLogin
+ * @args 		2
+ *					args[0] = user_name
+ *					args[1] = password
+ * @return	admin website template
+ * @desc		
+ *
+ **/
+function CheckLogin($pUsername, $pPassword)
+{
+	return 'ROOT';
+
+
+	$role = "";
+	$cryptpwd = md5($pPassword);
+
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select b.RoleName from ADM_User a, ADM_Role b "
+				 . "where b.RoleNmbr = a.RoleNmbr "
+				 . "and a.UserName = '" . $pUsername . "' "
+				 . "and a.Password = '" . $cryptpwd . "'";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$role = $row['RoleName'];
+		}
+		mysql_free_result($result);
+	}
+	else {
+		return false;
+	}
+	//CloseConnection($dbconn);
+	return $role;
+
+}
+
+/**
+ *
+ * @name 		AdmGetFamilies
+ * @args 		2
+ *					args[0] = parameter
+ *					args[1] = parameter type (familynmbr or gender)
+ * @return	resultset array
+ * @desc		get all registered families
+ *
+ **/
+function AdmGetFamilies($pParam, $pParamType)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	if ($pParamType == "familynmbr") {
+		$query = "select a.*, b.* from SCHL_Family a, SCHL_Parent b where b.FamilyNmbr = a.FamilyNmbr and a.FamilyNmbr = " . $pParam;
+	}
+	if ($pParamType == "gender") {
+		$query = "select a.*, b.* from SCHL_Family a, SCHL_Parent b where b.FamilyNmbr = a.FamilyNmbr and b.Gender = '" . $pParam . "'";
+	}
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		AdmGetRegistrationForFamily
+ * @args 		1
+ *					arg[0] = family_nmbr
+ * @return	resultset array
+ * @desc		get registration info for a family
+ *
+ **/
+function AdmGetRegistrationForFamily($pFamilyNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select a.*, b.*, c.* "
+				 . "from SCHL_Student a, "
+				 . "SCHL_CourseRegistration b, "
+				 . "SCHL_Course c "
+				 . "where a.FamilyNmbr = " . $pFamilyNmbr . " "
+				 . "and b.StudentNmbr = a.StudentNmbr "
+				 . "and c.CourseNmbr = b.CourseNmbr";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		AdmGetReferenceTable
+ * @args 		1
+ *					arg[0] = table_name
+ * @return	resultset array
+ * @desc		get reference values
+ *
+ **/
+function AdmGetReferenceTable($pTableName, $pColumn, $pValue)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select a.* "
+				 . "from " . $pTableName . " a ";
+	if ($pColumn != "" && $pValue != "") $query = $query . " where " . $pColumn . " = '" . $pValue . "' ";
+	if ($pTableName == 'REF_Subject') $query = $query . " order by a.SubjectOrder";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		AdmGetAllSectionTitles
+ * @args 		3
+ *					arg[0] = frame_nmbr
+ *					arg[1] = subject_id
+ *					arg[2] = language_nmbr
+ * @return	resultset array
+ * @desc		get reference values
+ *
+ **/
+function AdmGetAllSectionTitles($pFrameNmbr, $pSubjectID, $pLanguageNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select c.SectionNmbr, d.* "
+				 . " from PAGE_Frame a,"
+				 . " PAGE_Subject b,"
+				 . " PAGE_Section c,"
+				 . " PAGE_Item d"
+				 . " where a.FrameNmbr = " . $pFrameNmbr
+				 . " and b.FrameNmbr = a.FrameNmbr"
+				 . " and b.SubjectID = '" . $pSubjectID . "'"
+				 . " and b.LanguageNmbr = " . $pLanguageNmbr
+				 . " and c.SubjectNmbr = b.SubjectNmbr"
+				 . " and d.SectionNmbr = c.SectionNmbr"
+				 . " and (d.Type = 'title' or d.Type = 'announcement')"
+				 ;
+	$query = $query . " order by c.SectionNmbr desc";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		AdmDeleteSection
+ * @args 		1
+ *					arg[0] = section_nmbr
+ * @return	none
+ * @desc		delete section
+ *
+ **/
+function AdmDeleteSection($pSectionNmbr)
+{
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	// delete linked full content (including image) first if exists
+	$query = " select * from PAGE_Item"
+				 . " where SectionNmbr = " . $pSectionNmbr . " and (Type = 'fullcontenturl' OR Type = 'fullimageurl')";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$fullcontenturl = $row['Content'];
+			$fullcontentsectionnmbr = substr($fullcontenturl, strpos($fullcontenturl, 'sectionnmbr=') + 12);
+			// delete image file if exists
+			$img_query = " select * from PAGE_Item"
+						 . " where SectionNmbr = " . $fullcontentsectionnmbr . " and Type = 'image'";
+			$img_result = mysql_query($img_query) or die("Query failed : $img_query " . mysql_error());
+			if (mysql_num_rows($img_result) > 0) {
+				while ($img_row = mysql_fetch_array($img_result, MYSQL_ASSOC)) {
+					$img_filepath = $img_row['Content'];
+					// get count of the same image file
+					$imgct_query = " select count(*) as ct from PAGE_Item where Content = '" . $img_filepath . "'";
+					$imgct_result = mysql_query($imgct_query) or die("Query failed : $imgct_query " . mysql_error());
+					if (mysql_num_rows($imgct_result) > 0) $img_count = mysql_result($imgct_result, 0);
+					else $img_count = 0;
+					// delete file
+					if (file_exists($img_filepath) && $img_count == 1) unlink($img_filepath);
+				}
+				mysql_free_result($img_result);
+			}
+			// delete full content entry
+			$query = "delete from PAGE_Section where SectionNmbr = " . $fullcontentsectionnmbr;
+			mysql_query($query) or die("Query failed : $query " . mysql_error());
+		}
+		mysql_free_result($result);
+	}
+
+	// delete thumbnail file if exists
+	$thumb_query = " select * from PAGE_Item"
+				 . " where SectionNmbr = " . $pSectionNmbr . " and Type = 'thumbnail'";
+	$thumb_result = mysql_query($thumb_query) or die("Query failed : $thumb_query " . mysql_error());
+	if (mysql_num_rows($thumb_result) > 0) {
+		while ($thumb_row = mysql_fetch_array($thumb_result, MYSQL_ASSOC)) {
+			$thumb_filepath = $thumb_row['Content'];
+			// get count of the same thumbnail file
+			$thumbct_query = " select count(*) as ct from PAGE_Item where Content = '" . $thumb_filepath . "'";
+			$thumbct_result = mysql_query($thumbct_query) or die("Query failed : $thumbct_query " . mysql_error());
+			if (mysql_num_rows($thumbct_result) > 0) $thumb_count = mysql_result($thumbct_result, 0);
+			else $thumb_count = 0;
+			// delete file
+			if (file_exists($thumb_filepath) && $thumb_count == 1) unlink($thumb_filepath);
+		}
+		mysql_free_result($thumb_result);
+	}
+	
+	// delete swf file if exists
+	$swf_query = " select * from PAGE_Item"
+				 . " where SectionNmbr = " . $pSectionNmbr . " and Type = 'url'";
+	$swf_result = mysql_query($swf_query) or die("Query failed : $swf_query " . mysql_error());
+	if (mysql_num_rows($swf_result) > 0) {
+		while ($swf_row = mysql_fetch_array($swf_result, MYSQL_ASSOC)) {
+			$swf_filepath = $swf_row['Content'];
+			// get count of the same swf file
+			$swfct_query = " select count(*) as ct from PAGE_Item where Content = '" . $swf_filepath . "'";
+			$swfct_result = mysql_query($swfct_query) or die("Query failed : $swfct_query " . mysql_error());
+			if (mysql_num_rows($swfct_result) > 0) $swf_count = mysql_result($swfct_result, 0);
+			else $swf_count = 0;
+			// delete file
+			if (file_exists($swf_filepath) && $swf_count == 1) unlink($swf_filepath);
+		}
+		mysql_free_result($swf_result);
+	}
+	
+	// delete section
+	$query = "delete from PAGE_Section where SectionNmbr = " . $pSectionNmbr;
+	mysql_query($query) or die("Query failed : $query " . mysql_error());
+	//CloseConnection($dbconn);
+
+}
+
+/**
+ *
+ * @name 		AdmUpdateTuitionStatus
+ * @args 		none
+ * @return	none
+ * @desc		update tuition due status
+ *
+ **/
+function AdmUpdateTuitionStatus()
+{
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	for ($i = 0; $i < sizeof($_SESSION['TuitionStatus']); $i++) {
+		$sessionvalue = explode('#', getSession('TuitionStatus', $i));
+		$familynmbr = $sessionvalue[0];
+		$paid = $sessionvalue[1];
+		$query = "update SCHL_Family "
+					 . "set TuitionPaid = " . $paid . " "
+					 . "where FamilyNmbr = " . $familynmbr;
+		mysql_query($query) or die("Query failed : $query " . mysql_error());
+	}
+	//CloseConnection($dbconn);
+
+}
+
+/**
+ *
+ * @name 		AdmUpdateWebsite
+ * @args 		none
+ * @return	none
+ * @desc		update website
+ *
+ **/
+function AdmUpdateWebsite($pLanguageNmbr)
+{
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	// get subjectnmbr
+	$query = "select * from PAGE_Subject "
+				 . "where FrameNmbr = " . getSession('FrameNmbr', 0) . " "
+				 . "and SubjectID = '" . getSession('SubjectID', 0) . "' "
+				 . "and LanguageNmbr = " . $pLanguageNmbr;
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$subjectnmbr = $row['SubjectNmbr'];
+		}
+		mysql_free_result($result);
+	}
+	// get sectiontype etc.
+	$sectiontypenmbr = _AdmGetSectionType();
+	$position = 0; //"";
+	$authorname = getSession('WebsiteItemAuthor', 0);
+	$currentflag = "Y";
+	$createddatetime = "CURRENT_TIMESTAMP";
+	$updateddatetime = "CURRENT_TIMESTAMP";
+
+	// insert PAGE_Section	
+	$sectionnmbr = Insert_Table(
+									'PAGE_Section',
+									'SectionNmbr',
+									$subjectnmbr,
+									$sectiontypenmbr,
+									"'" . $position . "'",
+									"'" . $authorname . "'",
+									"'" . $currentflag . "'",
+									$createddatetime,
+									$updateddatetime
+								);
+
+	// insert PAGE_Item
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemAnnouncement', 0), 'announcement');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemTitle', 0), 'title');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemSubtitle', 0), 'subtitle');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemAbstract', 0), 'abstract');
+	if (getSession('WebsiteItemAbstract', 0) == "") {
+		_AdmInsertItem($sectionnmbr, getSession('WebsiteItemFullContent', 0), 'fullcontent');
+	}
+	if (isset($_FILES["WebsiteItemThumbnail__"]['name'])) {
+		_AdmInsertItem($sectionnmbr, $_FILES["WebsiteItemThumbnail__"]['name'], 'thumbnail');
+	}
+	if (!isset($_FILES["WebsiteItemThumbnail__"]['name']) && isset($_FILES["WebsiteItemImage__"]['name'])) {
+		if (getSession('SubjectID', 0) == 'CSLHOMEWORK') {
+			$swfurl = './photos/' . $_FILES["WebsiteItemImage__"]['name'];
+			_AdmInsertItem($sectionnmbr, $swfurl, 'url');
+		}
+		else {
+			_AdmInsertItem($sectionnmbr, $_FILES["WebsiteItemImage__"]['name'], 'image');
+		}
+	}
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemUrl', 0), 'url');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemUrlText', 0), 'urltext');
+
+	// upload file if exists (only upload once)
+	if ($pLanguageNmbr == 1) {
+		_AdmUploadFile();
+	}
+
+		
+
+	// add full content page if exists
+	if (getSession('WebsiteItemAbstract', 0) != "" || _AdmIsList()) {
+		_AdmAddFullContentUrl($sectionnmbr, 'fullcontenturl', $pLanguageNmbr);
+	}
+	if (isset($_FILES["WebsiteItemThumbnail__"]['name'])) {
+		_AdmAddFullContentUrl($sectionnmbr, 'fullimageurl', $pLanguageNmbr);
+	}
+	
+}
+
+/**
+ *
+ * @name 		AdmRootStuff
+ * @args 		none
+ * @return	none
+ * @desc		update tuition due status
+ *
+ **/
+function AdmRootStuff()
+{
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "update " . getSession('TableName', 0)
+				 . " set " . getSession('SetColumnName', 0) . " = '" . getSession('SetValue', 0) . "' "
+				 . " where " . getSession('WhereColumnName', 0) . " = '" . getSession('WhereValue', 0) . "' ";
+	mysql_query($query) or die("Query failed : $query " . mysql_error());
+	//CloseConnection($dbconn);
+
+}
+
+/**
+ *
+ * @name 		AdmUpdatePhotogroup
+ * @args 		none
+ * @return	none
+ * @desc		
+ *
+ **/
+function AdmUpdatePhotogroup($pSubjectE, $pSubjectC)
+{
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	// get max subjectid in  REF_Subject
+	$query = "select max(SubjectOrder) from REF_Subject";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	$row = mysql_fetch_row($result);
+	if ($row[0] > 0) {
+		$newsubjectorder = $row[0] + 1;
+		mysql_free_result($result);
+	}
+	// insert REF_Subject
+	$newsubjectid = 'ALBUM-' . $newsubjectorder;
+
+	$query = "insert into REF_Subject values ("
+				 . " '" . $newsubjectid . "', "
+				 . " 'Photo - " . $pSubjectE . "', "
+				 . " '" . $pSubjectC . "', "
+				 . " 'dynamic', "
+				 . $newsubjectorder
+				 . ")";
+	mysql_query($query) or die("Query failed : $query " . mysql_error());
+
+	// insert PAGE_Subject (for chinese and english)
+	$subjectnmbr = Insert_Table('PAGE_Subject', 'SubjectNmbr', 3, "'" . $newsubjectid . "'", 1);
+	$subjectnmbr = Insert_Table('PAGE_Subject', 'SubjectNmbr', 3, "'" . $newsubjectid . "'", 2);
+	//CloseConnection($dbconn);
+
+}
+
+/**
+ *
+ * @name 		AdmDeletePhotogroup
+ * @args 		none
+ * @return	none
+ * @desc		
+ *
+ **/
+function AdmDeletePhotogroup($pSubjectID)
+{
+	// connect to database
+	$dbconn = GetConnection();
+
+	// delete all files
+	$query = "select b.SectionNmbr "
+				 . "from PAGE_Subject a, "
+				 . "PAGE_Section b "
+				 . "where a.SubjectID = '" . $pSubjectID . "' "
+				 . "and b.SubjectNmbr = a.SubjectNmbr ";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$sectionnmbr = $row['SectionNmbr'];
+			AdmDeleteSection($sectionnmbr);
+		}
+		mysql_free_result($result);
+	}
+
+	// delete db entries
+	$query = "delete from REF_Subject where SubjectID = '" . $pSubjectID . "'";
+	mysql_query($query) or die("Query failed : $query " . mysql_error());
+	//CloseConnection($dbconn);
+
+}
+
+/**
+ *
+ * @name 		_AdmUploadFile
+ * @args 		1
+ *					args[0] = parent sectionnmbr
+ * @return	none
+ * @desc		upload file to images directory
+ *
+ **/
+function _AdmUploadFile()
+{
+	// move file
+	if (isset($_FILES["WebsiteItemThumbnail__"])) {
+		$thumbfilepath = "./photos/" . $_FILES["WebsiteItemThumbnail__"]['name'];
+		if (!move_uploaded_file($_FILES["WebsiteItemThumbnail__"]['tmp_name'], $thumbfilepath)) {
+			//echo "Error uploading thumbnail file!";
+		}
+	}
+	if (isset($_FILES["WebsiteItemImage__"])) {
+		$thumbfilepath = "./photos/" . $_FILES["WebsiteItemImage__"]['name'];
+		if (!move_uploaded_file($_FILES["WebsiteItemImage__"]['tmp_name'], $thumbfilepath)) {
+			//echo "Error uploading image file!";
+		}
+	}
+
+}
+
+/**
+ *
+ * @name 		_AdmAddFullContentUrl
+ * @args 		1
+ *					args[0] = parent sectionnmbr
+ * @return	none
+ * @desc		add full content or image url
+ *
+ **/
+function _AdmAddFullContentUrl($pParentSectionNmbr, $pItemType, $pLanguageNmbr)
+{
+	// get subjectnmbr
+	$query = "select * from PAGE_Subject "
+				 . "where FrameNmbr = 3 "
+				 . "and SubjectID = 'FULL' "
+				 . "and LanguageNmbr = " . $pLanguageNmbr;
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			$subjectnmbr = $row['SubjectNmbr'];
+		}
+		mysql_free_result($result);
+	}
+	// get sectiontype etc.
+	$sectiontypenmbr = 901;
+	$position = 0; //"";
+	$authorname = "";
+	$currentflag = "Y";
+	$createddatetime = "CURRENT_TIMESTAMP";
+	$updateddatetime = "CURRENT_TIMESTAMP";
+
+	// insert PAGE_Section	
+	$sectionnmbr = Insert_Table(
+									'PAGE_Section',
+									'SectionNmbr',
+									$subjectnmbr,
+									$sectiontypenmbr,
+									"'" . $position . "'",
+									"'" . $authorname . "'",
+									"'" . $currentflag . "'",
+									$createddatetime,
+									$updateddatetime
+								);
+
+	// insert url into PAGE_Item for parent section
+	$url = "./fcdschool.php?languagenmbr=" . $pLanguageNmbr . "&subjectid=FULL&sectionnmbr=$sectionnmbr";
+	_AdmInsertItem($pParentSectionNmbr, $url, $pItemType);
+
+	// insert full content into PAGE_Item
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemTitle', 0), 'title');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemSubtitle', 0), 'subtitle');
+	_AdmInsertItem($sectionnmbr, getSession('WebsiteItemFullContent', 0), 'fullcontent');
+	if (isset($_FILES["WebsiteItemImage__"]['name'])) {
+		_AdmInsertItem($sectionnmbr, $_FILES["WebsiteItemImage__"]['name'], 'image');
+	}
+
+}
+
+/**
+ *
+ * @name 		_AdmGetSectionType
+ * @args 		none
+ * @return	section_type
+ * @desc		get section type based on filled form elements
+ *
+ **/
+function _AdmGetSectionType()
+{
+	$sectiontype = "";
+
+	while (true) {
+		// announcement
+		if (getSession('WebsiteItemAnnouncement', 0) != "") {
+			$sectiontype = 401;
+			break;
+		}
+		// title + text
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& !isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 301;
+			break;
+		}
+		// title + abstract + full text
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) != ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& !isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 302;
+			break;
+		}
+		// title + image
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) == ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 303;
+			break;
+		}
+		// title + image + text
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 304;
+			break;
+		}
+		// title + text + thumbnail + full image
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 305;
+			break;
+		}
+		// title + image + abstract + full text
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) != ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 306;
+			break;
+		}
+		// title + thumbnail + full image + abstract + full text
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) != ""
+				&& getSession('WebsiteItemFullContent', 0) != ""
+				&& isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 307;
+			break;
+		}
+		// title + url
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) == ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& !isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) != ""
+				&& getSession('WebsiteItemUrlText', 0) != ""
+			) {
+			$sectiontype = 308;
+			break;
+		}
+		// url
+		if (getSession('WebsiteItemTitle', 0) == ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) == ""
+				&& !isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& !isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) != ""
+				&& getSession('WebsiteItemUrlText', 0) != ""
+			) {
+			$sectiontype = 309;
+			break;
+		}
+		// title + thumbnail + full image
+		if (getSession('WebsiteItemTitle', 0) != ""
+				&& getSession('WebsiteItemAbstract', 0) == ""
+				&& getSession('WebsiteItemFullContent', 0) == ""
+				&& isset($_FILES["WebsiteItemThumbnail__"]['name'])
+				&& isset($_FILES["WebsiteItemImage__"]['name'])
+				&& getSession('WebsiteItemUrl', 0) == ""
+				&& getSession('WebsiteItemUrlText', 0) == ""
+			) {
+			$sectiontype = 310;
+			break;
+		}
+		break;		
+	}
+	return $sectiontype;
+	
+}
+
+/**
+ *
+ * @name 		_AdmInsertItem
+ * @args 		2
+ *					args[0] = sectionnmbr
+ *					args[1] = item_value
+ *					args[2] = item_type
+ * @return	itemnmbr
+ * @desc		
+ *
+ **/
+function _AdmInsertItem($pSectionNmbr, $pItemValue, $pItemType)
+{
+	$itemnmbr = "";
+	if ($pItemType == "thumbnail" || $pItemType == "image") {
+		$itemvalue = "./photos/" . $pItemValue;
+	}
+	else {
+		$itemvalue = str_replace("\n", "<br/>", $pItemValue);
+	}
+	$itemvalue = mysql_real_escape_string($itemvalue);
+	
+	if ($pItemValue != "") {
+		$itemnmbr = Insert_Table(
+									'PAGE_Item',
+									'ItemNmbr',
+									$pSectionNmbr,
+									"'" . $itemvalue . "'",
+									"'" . $pItemType . "'"
+								);
+	}
+	return $itemnmbr;
+	
+}
+
+/**
+ *
+ * @name 		_AdmIsList
+ * @args 		0
+ * @return	is list or not
+ * @desc		
+ *
+ **/
+function _AdmIsList()
+{
+	$islist = false;
+	if (getSession('SubjectID', 0) == 'STUDENTWORK'
+		|| getSession('SubjectID', 0) == 'FORUM'
+		|| getSession('SubjectID', 0) == 'TEACHING'
+		|| getSession('SubjectID', 0) == 'PARENTMAILBOX'
+		|| getSession('SubjectID', 0) == 'NEWS'
+		|| getSession('SubjectID', 0) == 'SAT'
+		) {
+		$islist = true;
+	}
+	return $islist;
+	
+}
+
+/**
+ *
+ * @name 		Insert_Table
+ * @args 		variable
+ *					arg[0] = table_name
+ *					arg[1] = primary_key_name
+ *					arg[2] = value (varchar needs single quot '')
+ *					arg[3] = value (varchar needs single quot '')
+ *					...
+ * @return	primary key
+ * @desc		
+ *
+ **/
+function Insert_Table()
+{
+	$argnum = func_num_args();
+	$arglist = func_get_args();
+
+	$lTableName = func_get_arg(0);
+	$lPrimaryKeyName = func_get_arg(1);
+	// connect to database
+	$dbconn = GetConnection();
+
+	$lPrimaryKeyValue = _GetNextSeqNmbr($lTableName, $lPrimaryKeyName);
+	$sqlStmt = "insert into " . $lTableName . " values ( "
+							. $lPrimaryKeyValue . ", ";
+
+	for ($i = 2; $i < $argnum; $i++) {
+		if ($i != $argnum - 1) {
+			$sqlStmt = $sqlStmt . $arglist[$i] . ", ";
+		}
+		else {
+			$sqlStmt = $sqlStmt . $arglist[$i] . ")";
+		}
+	}
+
+
+	//echo $sqlStmt . "\n";
+	mysql_query($sqlStmt) or die ("Insert failed : $sqlStmt --- " . mysql_error());
+	// close database connection
+	//CloseConnection($dbconn);
+	return $lPrimaryKeyValue;
+}
+
+/**
+ *
+ * @name 		GetFamily
+ * @args 		arg[0] = section_nmbr
+ * @return	resultset array
+ * @desc		get all items for a given section
+ *
+ **/
+function GetFamily($pFamilyNmbr)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select * from SCHL_Family where FamilyNmbr = " . $pFamilyNmbr;
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+/**
+ *
+ * @name 		GetSubMenu
+ * @args 		arg[0] = menu
+ * @return	resultset array
+ * @desc		get all entry for this submenu
+ *
+ **/
+function GetSubMenu($pMenu)
+{
+	$resultset = array();
+	
+	// connect to database
+	$dbconn = GetConnection();
+
+	$query = "select * from REF_Subject where SubjectID like '" . $pMenu . "%' order by SubjectOrder desc";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	if (mysql_num_rows($result) > 0) {
+		while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+			array_push($resultset, $row);
+		}
+		mysql_free_result($result);
+	}
+	//CloseConnection($dbconn);
+	return $resultset;
+
+}
+
+function UpdateAllTables()
+{
+	$familynmbr = Insert_Table(
+									'SCHL_Family',
+									'FamilyNmbr',
+									"'" . getSession('Street', 0) . "'",
+									"'" . getSession('City', 0) . "'",
+									"'" . getSession('State', 0) . "'",
+									"'" . getSession('Zip', 0) . "'",
+									"'" . getSession('HomeTelephone', 0) . "'",
+									"'" . getSession('Email', 0) . "'",
+									"'" . getSession('Total', 0) . "'",
+									"''",
+									"CURRENT_TIMESTAMP",
+									"''"
+								);
+	if (getSession('FatherLastName', 0) != "") {
+		$parentnmbr = Insert_Table(
+										'SCHL_Parent',
+										'ParentNmbr',
+										$familynmbr,
+										"'" . getSession("FatherLastName", 0) . "'",
+										"'" . getSession("FatherFirstName", 0) . "'",
+										"'" . getSession("FatherMiddleName", 0) . "'",
+										"'" . getSession("FatherChineseName", 0) . "'",
+										"'male'",
+										"'" . getSession("WorkTelephone", 0) . "'"
+									);
+	}
+	if (getSession('MotherLastName', 0) != "") {
+		$parentnmbr = Insert_Table(
+										'SCHL_Parent',
+										'ParentNmbr',
+										$familynmbr,
+										"'" . getSession("MotherLastName", 0) . "'",
+										"'" . getSession("MotherFirstName", 0) . "'",
+										"'" . getSession("MotherMiddleName", 0) . "'",
+										"'" . getSession("MotherChineseName", 0) . "'",
+										"'female'",
+										"'" . getSession("WorkTelephone", 0) . "'"
+									);
+	}
+	for ($i = 0; $i < getSessionCount('StudentLastName', '*'); $i++) {
+		$studentnmbr = Insert_Table(
+										'SCHL_Student',
+										'StudentNmbr',
+										$familynmbr,
+										"'" . getSession("StudentLastName$i", 0) . "'",
+										"'" . getSession("StudentFirstName$i", 0) . "'",
+										"'" . getSession("StudentMiddleName$i", 0) . "'",
+										"'" . getSession("StudentChineseName$i", 0) . "'",
+										"'" . getSession("StudentGender$i", 0) . "'",
+										"'" . getSession("StudentBirthDay$i", 0) . "'",
+										"'" . getSession("StudentIsAdult$i", 0) . "'"
+									);
+		if (getSession("ChineseClass$i", 0) != "") {
+			$chineseclassarray = explode('#', getSession('ChineseClass' . $i, 0));
+			$chineseclassnmbr = $chineseclassarray[0];
+			$registrationnmbr = Insert_Table(
+											'SCHL_CourseRegistration',
+											'RegistrationNmbr',
+											$chineseclassnmbr,
+											$studentnmbr,
+											"'" . getSession("RegistrationPeriod$i", 0) . "'"
+										);
+		}
+		if (getSession("CultureClass$i", 0) != "") {
+			$cultureclassarray = explode('#', getSession('CultureClass' . $i, 0));
+			$cultureclassnmbr = $cultureclassarray[0];
+			$registrationnmbr = Insert_Table(
+											'SCHL_CourseRegistration',
+											'RegistrationNmbr',
+											$cultureclassnmbr,
+											$studentnmbr,
+											"'" . getSession("RegistrationPeriod$i", 0) . "'"
+										);
+		}
+		
+	}
+
+}
+
+/**
+ *
+ * @name 		_GetNextSeqNmbr
+ * @args 		2
+ *					arg[0] = table_name
+ *					arg[1] = column_name that needs the sequence number
+ * @return	next sequence_number
+ * @desc		
+ *
+ **/
+function _GetNextSeqNmbr($pTableName, $pPrimaryKeyName)
+{
+	$seqnmbr = 1;
+	
+	$query = "select max(" . $pPrimaryKeyName . ") from " . $pTableName . " ";
+	$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+	$row = mysql_fetch_row($result);
+	if ($row[0] > 0) {
+		$seqnmbr = $row[0] + 1;
+	}
+	return $seqnmbr;
+
+}
+
+/**
+ *
+ * @name 			DbUtil
+ * @type 			Class
+ * @desc			
+ * @function 	DbUtil()
+ * @function 	GetConnection()
+ * @function 	InsertTable()
+ * @function 	_GetNextSeqNmbr($pTableName, $pPrimaryKeyName)
+ *
+ **/
+class DbUtil {
+	var $cDbConn;
+
+	////// constructor
+	function DbUtil() {
+		$this->cDbConn = $this->GetConnection();
+	}
+
+	////// GetConnection
+	function GetConnection() {
+		$lUser = GetConfigurationParam("fcd_database_user");
+		$lPassword = GetConfigurationParam("fcd_database_passwd");
+		$lConn = mysql_connect("localhost", $lUser, $lPassword) or die("Connection to database failed : " . mysql_error());
+		$db = GetConfigurationParam("fcd_database");
+		mysql_select_db($db) or die("Error selecting database");
+		return $lConn;
+	}
+
+	////// InsertTable
+	function InsertTable() {
+		$argnum = func_num_args();
+		$arglist = func_get_args();
+		$dbconn = $this->GetConnection();
+	
+		$lTableName = func_get_arg(0);
+		$lPrimaryKeyName = func_get_arg(1);
+		$lPrimaryKeyValue = $this->_GetNextSeqNmbr($lTableName, $lPrimaryKeyName);
+		$sqlStmt = "insert into " . $lTableName . " values ( "
+								. $lPrimaryKeyValue . ", ";
+		for ($i = 2; $i < $argnum; $i++) {
+			if ($i != $argnum - 1) $sqlStmt = $sqlStmt . $arglist[$i] . ", ";
+			else $sqlStmt = $sqlStmt . $arglist[$i] . ")";
+		}
+		if ($this->RunSQL($sqlStmt)) return $lPrimaryKeyValue;
+		else return false;
+	}
+
+	////// RunSQL
+	function RunSQL($pSQL) {
+		$status = true;
+		$dbconn = $this->GetConnection();
+	
+		$query = $pSQL;
+		//echo $query . "\n";
+		if (!mysql_query($query)) {
+			print("SQL failure : $query --- " . mysql_error());
+			$status = false;
+		}
+		return $status;
+	}
+
+	////// _GetNextSeqNmbr
+	function _GetNextSeqNmbr($pTableName, $pPrimaryKeyName) {
+		$seqnmbr = 1;
+		$dbconn = $this->GetConnection();
+		
+		$query = "select max(" . $pPrimaryKeyName . ") from " . $pTableName . " ";
+		$result = mysql_query($query) or die("Query failed : $query " . mysql_error());
+		$row = mysql_fetch_row($result);
+		if ($row[0] > 0) {
+			$seqnmbr = $row[0] + 1;
+		}
+		return $seqnmbr;
+	}
+
+	////// SelectTable
+	function SelectTable() {
+		$resultset = array();
+		$argnum = func_num_args();
+		$arglist = func_get_args();
+		$dbconn = $this->GetConnection();
+
+		switch ($argnum) {
+			case 1:
+				$query = $arglist[0];
+				break;
+			case 2:
+				$query = "select " . $arglist[1]
+							. " from " . $arglist[0];
+				break;
+			default:
+				$query = "select " . $arglist[1]
+							. " from " . $arglist[0]
+							. " where " . $arglist[2] . " = " . $arglist[3];
+				for ($i = 4; $i < $argnum - 1; $i = $i + 2) {
+					$query = $query . " and "  . $arglist[$i] . " = " . $arglist[$i + 1] . " ";
+				}
+		}
+		if ($result = mysql_query($query)) {
+			if (mysql_num_rows($result) > 0) {
+				while ($row = mysql_fetch_array($result, MYSQL_ASSOC)) {
+					array_push($resultset, $row);
+				}
+				mysql_free_result($result);
+			}
+			else {
+				return false;
+			}
+		}
+		else {
+			print("Query failed : $query " . mysql_error());
+			return false;
+		}
+		return 	$resultset;
+	}
+
+}
+
+?>
+

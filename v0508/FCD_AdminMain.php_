@@ -1,0 +1,64 @@
+<?php
+
+**/
+ *
+ *
+ * @version $Id$
+ * @copyright 2005
+**/
+
+**/
+$debug = 1;
+if ($debug) {
+**/
+	ini_set("display_errors","1");
+}
+
+
+if (strlen(session_id()) < 5) {
+	session_start();
+}
+include_once 'LIB_Session.inc';
+include_once 'LIB_DbUtilities.inc';
+include_once 'FCD_AdminTemplates.php';
+
+
+
+
+
+
+
+
+setSession();
+if (getSession('USERROLE', 0) == "") {
+	if (isset($_POST['UserName__']) && isset($_POST['PassWord__'])) {
+		if ($role = CheckLogin($_POST['UserName__'], $_POST['PassWord__'])) {
+			setSession('USERROLE__', $role);
+			GetAdmin('Options');
+		}
+		else {
+			GetAdmin('Login');
+		}
+	}
+	else {
+		GetAdmin('Login');
+	}
+}
+else {
+	if (isset($_GET['_Task']) && $_GET['_Task'] == 'logout') {
+		unsetSession();
+		GetAdmin('Login');
+	}
+	else {
+		GetAdmin(getSession('_Task'));
+	}
+	
+}
+
+
+
+
+
+
+
+?>

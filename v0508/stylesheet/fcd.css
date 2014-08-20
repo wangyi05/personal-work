@@ -1,0 +1,242 @@
+.adsfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	/*line-height: 2px;*/
+	color: #966901;
+}
+
+.labelfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	/*line-height: 2px;*/
+	color: black;
+}
+
+.hometitlefont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 15px;
+	font-weight: bold;
+	/*line-height: 2px;*/
+	color: #e77503;
+}
+
+.titlefont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 15px;
+	font-weight: bold;
+	/*line-height: 2px;*/
+	color: #5B5E00;
+}
+
+.smalltitlefont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 14px;
+	/*font-weight: bold;*/
+	/*line-height: 2px;*/
+	color: darkblue;
+}
+
+.subtitlefont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	/*line-height: 2px;*/
+	color: #5B5E00;
+}
+
+.contentfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	line-height: 18px;
+	color: #4E4A03;
+}
+
+.lightlabelfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 13px;
+	color: #555555;
+}
+
+.fineprintfont {
+	height: 60px;
+	line-height: 10px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 10px;
+	color: #4E4A03;
+}
+
+.printlabelfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	/*line-height: 2px;*/
+	color: black;
+}
+
+.topaddressfont {
+	line-height: 13px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	color: #4E4A03;
+}
+
+.urlfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	/*line-height: 2px;*/
+	color: blue;
+}
+
+
+table {
+  padding:0px; 
+}
+
+a {
+	color: darkblue; /*#3366CC;*/
+	text-decoration: none;
+}
+
+a.linkfont {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 11px;
+	/*line-height: 2px;*/
+	color: #589201;
+}
+
+a.linkfont2 {
+	/*height: 70px;*/
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 9px;
+	/*line-height: 2px;*/
+	color: #589201;
+}
+
+table.thinborder {
+	border-style: solid;
+	border-width: 1px;
+	border-color: #D3D1DD;
+}
+
+table.thickborder {
+  padding:0px; 
+  border-style:solid;
+	border-width: 1px;
+	border-color: #1B591B;
+}
+
+table.thinbottomborder {
+	border-bottom: 2px solid #9ACD32;
+	height: 3px;
+	line-height: 2px;
+}
+
+table.doubleborder {
+	border-style: double;
+	border-width: 4px;
+	border-color: darkgreen;
+	/*background-color: #CCFFCC;*/
+}
+
+table.singleborder {
+	border-style: solid;
+	border-width: 1px;
+	border-color: darkgreen;
+	/*background-color: #CCFFCC;*/
+}
+
+
+table.lefttoprightborder {
+	border-left: 1px solid #D3D1DD;
+	border-top: 1px solid #D3D1DD;
+	border-right: 1px solid #D3D1DD;
+}
+
+table.leftrightborder {
+	border-left: 1px solid #D3D1DD;
+	border-right: 1px solid #D3D1DD;
+}
+
+table.leftbottomrightborder {
+	border-left: 1px solid #D3D1DD;
+	border-bottom: 1px solid #D3D1DD;
+	border-right: 1px solid #D3D1DD;
+}
+
+
+td.leftpanel {
+	height: 70px;
+	line-height: 2px;
+	color: blue;
+}
+
+input.login {
+	width: 120px;
+	height: 20px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	border-right: 1px solid black;
+}
+
+input.smallsubmit {
+	width: 80px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: darkgreen;
+	color: #FFFFFF;
+}
+
+input.biggreensubmit {
+	width: 120px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: darkgreen;
+	color: #FFFFFF;
+}
+
+input.smallwhitesubmit {
+	width: 80px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: #FFFFFF;
+	color: darkblue;
+}
+
+input.bigwhitesubmit {
+	width: 150px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: #FFFFFF;
+	color: darkblue;
+}
+
+input.bigbluesubmit {
+	width: 150px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: darkblue;
+	color: #FFFFFF;
+}
+
+input.bigredsubmit {
+	width: 120px;
+	font-family: Arial, Helvetica, sans-serif;
+	font-size: 12px;
+	background-color: darkred;
+	color: #FFFFFF;
+}
+
+img.url {
+	border-style: none;
+	padding: 0px;
+}
+

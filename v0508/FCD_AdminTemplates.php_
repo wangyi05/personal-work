@@ -1,0 +1,1005 @@
+﻿<?php
+
+**/
+ *
+ *
+ * @version $Id$
+ * @copyright 2005
+**/
+
+
+**/
+ *
+ * @name 		GetAdmin
+ * @args 		1
+ *					args[0] = subtask
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetAdmin($pTask)
+{
+?>
+**/
+	<html>
+	<head>
+**/
+**/
+**/
+**/
+**/
+	
+	<body leftmargin="0" topmargin="0">
+	<!-- ***************************************** -->
+	<!--								Frame 1										 -->
+	<!-- ***************************************** -->
+**/
+**/
+		<table border="0" width="800">
+			<tr>
+				<td align="right">
+				<?php if ($pTask == 'Login') { ?>
+				&nbsp;
+				<?php } else { ?>
+**/
+				<?php } ?>
+**/
+**/
+			<tr>
+				<td align="center">
+**/
+**/
+**/
+<?php
+	switch ($pTask) {
+		case "Login":
+			GetLogin();
+			break;
+		case "Options":
+			GetAdminOptions();
+			break;
+		case "BackToOptions":
+			unsetSessionForAdminCancel();
+			GetAdminOptions();
+			break;
+		case "BackToRegOptions":
+			unsetSessionForAdminCancel();
+			GetManageRegistration();
+			break;
+		case "SelectFrame":
+			unsetSessionForChangeFrame();
+			GetManageWebsite();
+			break;
+		case "SelectSubject":
+			unsetSessionForChangeSubject();
+			GetManageWebsite();
+			break;
+		case "ManageWebsite":
+			GetManageWebsite();
+			break;
+		case "RefreshManageWebsite":
+			GetManageWebsite();
+			break;
+		case "UpdateWebsite":
+			AdmUpdateWebsite(getSession('LanguageNmbr', 0));
+			GetManageWebsite();
+			break;
+		case "DeleteSection":
+			for ($i = 0; $i < sizeof($_SESSION['SectionToDelete']); $i++) {
+				AdmDeleteSection(getSession('SectionToDelete', $i));
+			}
+			GetManageWebsite();
+			break;
+		case "UpdatePhotogroup":
+			AdmUpdatePhotogroup(getSession('PhotogroupEnglishLabel', 0), getSession('PhotogroupChineseLabel', 0));
+			GetManageWebsite();
+			break;
+		case "DeletePhotogroup":
+			for ($i = 0; $i < sizeof($_SESSION['PhotogroupToDelete']); $i++) {
+				AdmDeletePhotogroup(getSession('PhotogroupToDelete', $i));
+			}
+			GetManageWebsite();
+			break;
+		case "ManageRegistration":
+			GetManageRegistration();
+			break;
+		case "ViewRegFamilies":
+			GetRegisteredFamilies();
+			break;
+		case "DisplayFamilyInfo":
+			GetDisplayFamilyInfo(getSession('FamilyNmbr', 0));
+			break;
+		case "UpdateTuitionStatus":
+			AdmUpdateTuitionStatus();
+			GetRegisteredFamilies();
+			break;
+
+		case "ManageRootStuff":
+			GetManageRootStuff();
+			break;
+		case "SubmitRootStuff":
+			AdmRootStuff();
+			GetManageRootStuff();
+			break;
+		default:
+			GetAdminOptions();
+			GetLogin();
+	}
+?>
+**/
+**/
+**/
+		
+
+**/
+**/
+<?php
+}
+
+
+
+**/
+ *
+ * @name 		GetLogin
+ * @args 		none
+ * @return		admin website template
+ * @desc		Display login input form
+ *
+**/
+function GetLogin()
+{
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td height="250" align="top">
+			    <table border="0" align="center" cellpadding="0" cellspacing="0">
+			      <tr>
+			        <td width="550" align="center">
+			          <table border="0" class="thinborder">
+			            <tr height="40">
+**/
+**/
+**/
+			              <td align="left">
+		                  <INPUT type="text" name="UserName__" class="login">
+**/
+**/
+**/
+			            <tr>
+**/
+**/
+**/
+			              <td align="left">
+		                  <INPUT type="password" name="PassWord__" class="login">
+**/
+**/
+**/
+			            <tr>
+**/
+**/
+**/
+**/
+**/
+**/
+			            <tr>
+**/
+**/
+**/
+			              <td align="right">
+**/
+**/
+**/
+**/
+**/
+**/
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+**/
+ *
+ * @name 		GetAdminOptions
+ * @args 		none
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetAdminOptions()
+{
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td align="right">
+					<table width="500" border="0" align="center">
+<?
+	if (getSession('USERROLE', 0) == "ROOT" || getSession('USERROLE', 0) == "ADMIN") {
+?>
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="Web" value="Manage Website" class="bigwhitesubmit"
+**/
+**/
+**/
+				    <tr>
+**/
+**/
+<?
+	}
+?>
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="Reg" value="Manage Registration" class="bigwhitesubmit"
+**/
+**/
+**/
+				    <tr>
+**/
+**/
+<?
+	if (getSession('USERROLE', 0) == "ROOT") {
+?>
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="RootStuff" value="Root Stuff" class="bigwhitesubmit"
+**/
+**/
+**/
+				    <tr>
+**/
+**/
+<?
+	}
+?>
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+**/
+ *
+ * @name 		GetManageWebsite
+ * @args 		none
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetManageWebsite()
+{
+	$framearray = AdmGetReferenceTable('PAGE_Frame', '', '');
+	$subjectarray = AdmGetReferenceTable('REF_Subject', 'SubjectType', 'dynamic');
+	$languagearray = AdmGetReferenceTable('REF_Language', '', '');
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td align="right">
+					<table width="650" border="0" align="center">
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left"> 
+								<select name="FrameNmbr__" size="1" style="width: 150px"
+**/
+**/
+<?php
+	for ($m = 0; $m < sizeof($framearray); $m++) {
+		if ($m > 0) {
+?>
+									<option value="<?php echo $framearray[$m]['FrameNmbr']; ?>"
+**/
+<?php
+		}
+	}
+?>
+**/
+**/
+**/
+<?php
+	if (getSession('FrameNmbr', 0) != 2) {
+?>
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left"> 
+								<select name="SubjectID__" size="1" style="width: 350px"
+**/
+<?php
+		if (getSession('FrameNmbr', 0) == 4) {
+?>
+**/
+<?php
+		}
+		else {
+?>
+**/
+<?php
+			for ($n = 0; $n < sizeof($subjectarray); $n++) {
+				if ($subjectarray[$n]['SubjectID'] != 'ROLLINGTEXT') {
+?>
+									<option value="<?php echo $subjectarray[$n]['SubjectID']; ?>"
+**/
+<?php
+				}
+			}
+		}
+?>
+**/
+**/
+**/
+<?php
+	}
+	if (getSession('FrameNmbr', 0) != 2) {
+?>
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left"> 
+								<select name="LanguageNmbr__" size="1" style="width: 150px" 
+**/
+**/
+<?php
+		for ($k = 0; $k < sizeof($languagearray); $k++) {
+?>
+									<option value="<?php echo $languagearray[$k]['LanguageNmbr']; ?>" 
+**/
+<?php
+		}
+?>
+**/
+**/
+**/
+<?php
+	}
+?>
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont">
+<?php
+	if (getSession('FrameNmbr', 0) != 2) {
+?>
+								<input type="radio" name="WebsiteTask__" value="UpdateWebsite" 
+								<?php if (getSession('WebsiteTask', 0) == 'UpdateWebsite') echo ' checked'; ?>
+**/
+								&nbsp;&nbsp;Add
+								<input type="radio" name="WebsiteTask__" value="DeleteSection" 
+								<?php if (getSession('WebsiteTask', 0) == 'DeleteSection') echo ' checked'; ?>
+**/
+								&nbsp;&nbsp;Delete
+<?php
+	}
+	else {
+?>
+								<input type="radio" name="WebsiteTask__" value="UpdatePhotogroup" <?php if (getSession('WebsiteTask', 0) == 'UpdatePhotogroup') echo ' checked'; ?>
+**/
+								&nbsp;&nbsp;Add photo group
+								<input type="radio" name="WebsiteTask__" value="DeletePhotogroup" <?php if (getSession('WebsiteTask', 0) == 'DeletePhotogroup') echo ' checked'; ?>
+**/
+								&nbsp;&nbsp;Delete photo group
+<?php
+	}
+?>
+**/
+**/
+**/
+					<table width="650" border="0" align="center">
+				    <tr>
+				      <td height="50"> 
+**/
+**/
+**/
+**/
+<?php
+	if (getSession('WebsiteTask', 0) == 'UpdateWebsite') {
+		if (getSession('FrameNmbr', 0) == '4') {
+?>
+					<table width="650" border="0" align="center">
+						<tr>
+							<td class="labelfont">
+**/
+**/
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+<?php
+		}
+		else {
+?>
+					<table width="650" border="0" align="center">
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+<?php
+			if (substr(getSession('SubjectID', 0), 0, 6) != 'ALBUM-') {
+?>
+					<table width="650" border="0" align="center">
+<?php
+				if (getSession('USERROLE', 0) == 'NOBODY') {
+?>
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+<?php
+				}
+				if (getSession('SubjectID', 0)	!= 'CSLHOMEWORK') {
+?>
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+<?php
+				}
+?>
+**/
+<?php
+			}
+?>
+					<table width="650" border="0" align="center">
+<?php
+			if (getSession('SubjectID', 0)	!= 'NEWS'
+			&&  getSession('SubjectID', 0)	!= 'STUDENTWORK'
+			&&  getSession('SubjectID', 0)	!= 'FORUM'
+			&&  getSession('SubjectID', 0)	!= 'PARENTMAILBOX'
+			&&  getSession('SubjectID', 0)	!= 'TEACHING'
+			&&  getSession('SubjectID', 0)	!= 'CSLHOMEWORK'
+			) {
+?>
+						<tr>
+							<td class="labelfont">
+**/
+**/
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+<?php
+			}
+?>
+						<tr>
+							<td class="labelfont">
+**/
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+<?php
+			if (getSession('USERROLE', 0) == 'ROOT') {
+?>
+					<table width="650" border="0" align="center">
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+
+<?php 
+			}
+**/
+?>
+					<table width="650" border="0" align="center">
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+<?php 
+**/
+		}
+	}
+	if (getSession('WebsiteTask', 0) == 'DeleteSection') {
+		$titlearray = AdmGetAllSectionTitles(getSession('FrameNmbr', 0), getSession('SubjectID', 0), getSession('LanguageNmbr', 0));
+?>
+					<table width="550" border="1" align="center">
+						<tr>
+**/
+**/
+**/
+<?php
+		for ($i = 0; $i < sizeof($titlearray); $i++) {
+?>
+				    <tr>
+**/
+**/
+**/
+<?php
+		}
+?>
+**/
+<?php
+	}
+	if (getSession('WebsiteTask', 0) == 'UpdatePhotogroup') {
+?>
+					<table width="550" border="0" align="center">
+						<tr>
+							<td class="labelfont">
+								The following label will appear as the sub-menu for the Photo link.
+								Please make the label as SHORT as possible.
+**/
+**/
+						<tr>
+**/
+**/
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+						<tr>
+**/
+**/
+				    <tr>
+				      <td align="left" class="labelfont"> 
+**/
+**/
+**/
+**/
+<?php
+	}
+	if (getSession('WebsiteTask', 0) == 'DeletePhotogroup') {
+		$labelarray = AdmGetReferenceTable('REF_Subject', 'SubjectType', 'dynamic');
+?>
+					<table width="550" border="1" align="center">
+						<tr>
+**/
+**/
+**/
+<?php
+		for ($i = 0; $i < sizeof($labelarray); $i++) {
+			if (substr($labelarray[$i]['SubjectID'], 0, 5) == "ALBUM") {
+?>
+				    <tr>
+**/
+**/
+**/
+<?php
+			}
+		}
+?>
+**/
+<?php
+	}
+?>
+					<table width="650" border="0" align="center">
+				    <tr>
+				      <td align="right"> 
+				        <input type="button" name="BackToOptions" value="Cancel" class="smallwhitesubmit"
+**/
+				        <input type="button" name="Reg" value="Submit" class="smallwhitesubmit"
+**/
+**/
+**/
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+**/
+ *
+ * @name 		GetManageRegistration
+ * @args 		none
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetManageRegistration()
+{
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td align="right">
+					<table width="500" border="0" align="center">
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="Web" value="Registered Families" class="bigwhitesubmit"
+**/
+**/
+**/
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="Reg" value="Class Registration" class="bigwhitesubmit"
+**/
+**/
+**/
+**/
+					<table width="500" border="0" align="center">
+				    <tr>
+				      <td height="250" align="right" valign="bottom"> 
+				        <input type="button" name="BackToOptions" value="Cancel" class="smallwhitesubmit"
+**/
+**/
+**/
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+**/
+ *
+ * @name 		GetRegisteredFamilies
+ * @args 		none
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetRegisteredFamilies()
+{
+	$familiesarray = AdmGetFamilies('male', 'gender');
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td align="right">
+					<table width="500" border="1" align="center">
+				    <tr>
+**/
+**/
+**/
+**/
+**/
+**/
+<?php
+	for ($i = 0; $i < sizeof($familiesarray); $i++) {
+?>
+				    <tr>
+				      <td align="center"> 
+				        <input type="radio" name="FamilyNmbr__" value="<?php echo $familiesarray[$i]['FamilyNmbr'] ?>" 
+**/
+**/
+				      <td align="center" class="labelfont"> 
+				        <?php echo $familiesarray[$i]['FamilyNmbr']; ?>
+**/
+				      <td class="labelfont"> 
+				        <?php echo $familiesarray[$i]['FamilyName'] . ', ' . $familiesarray[$i]['GivenName']; ?>
+**/
+				      <td align="center" class="labelfont"> 
+				        <?php echo $familiesarray[$i]['TuitionDue']; ?>
+**/
+				      <td align="center" class="labelfont"> 
+				        <?php if ($familiesarray[$i]['TuitionPaid'] == $familiesarray[$i]['TuitionDue']) {echo 'Paid';} else{ ?>
+**/
+				        <?php } ?>
+**/
+**/
+<?php
+	}
+?>
+**/
+					<table width="500" border="0" align="center">
+				    <tr>
+				      <td align="right"> 
+				        <input type="button" name="BackToRegOptions" value="Cancel" class="smallwhitesubmit"
+**/
+				        <input type="submit" name="UpdateTuitionStatus" value="Update" class="smallwhitesubmit"
+**/
+**/
+**/
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+
+**/
+ *
+ * @name 		GetDisplayFamilyInfo
+ * @args 		1
+ *					arg[0] = family_nmbr
+ * @return	resultset array
+ * @desc		get registration info for a family
+ *
+**/
+function GetDisplayFamilyInfo($pFamilyNmbr)
+{
+	$familyinfoarray = AdmGetFamilies($pFamilyNmbr, 'familynmbr');
+	$reginfoarray = AdmGetRegistrationForFamily($pFamilyNmbr);
+?>
+			<tr>
+				<td align="center">
+					<table width="650" align="center" cellspacing="0" cellpadding="0">
+						<tr>
+							<td align="center" height="40" valign="center" class="lightlabelfont">
+**/
+**/
+**/
+**/
+					<table width="650" align="center" cellspacing="0" cellpadding="0" class="noborder">
+						<tr>
+							<td>
+								<table width="650" border="0" align="center" cellspacing="0" cellpadding="0">
+									<tr>
+**/
+**/
+**/
+**/
+									<tr>
+										<td align="right" valign="top" class="labelfont">
+**/
+**/
+**/
+**/
+										<td align="left" valign="top" class="labelfont">
+<?php 
+	if ($familyinfoarray[0]['Gender'] == 'male')
+**/
+	else
+**/
+	if (isset($familyinfoarray[1]))
+		echo $familyinfoarray[1]['FamilyName'] . ", " . $familyinfoarray[1]['GivenName'] . " " . $familyinfoarray[1]['ChineseName'];
+?>
+**/
+**/
+**/
+									<tr>
+**/
+**/
+										<td align="left" valign="top" class="labelfont">
+**/
+**/
+											<?php echo $familyinfoarray[0]['State'] . " " . $familyinfoarray[0]['ZipCode']; ?>
+**/
+**/
+**/
+									<tr>
+										<td align="right" valign="top" class="labelfont">
+**/
+											Email:
+**/
+**/
+										<td align="left" valign="top" class="labelfont">
+**/
+											<?php echo $familyinfoarray[0]['ContactEmail']; ?>
+**/
+**/
+**/
+**/
+**/
+**/
+**/
+					<table width="650" align="center" cellspacing="0" cellpadding="0">
+						<tr>
+							<td valign="top">
+								<table width="550" border="1" align="center" cellspacing="0" cellpadding="0">
+									<tr>
+**/
+**/
+**/
+**/
+<?php 
+	$currentname = "";
+	for ($k = 0; $k < sizeof($reginfoarray); $k++) {
+		$studentname = $reginfoarray[$k]['FamilyName'] . ', ' . $reginfoarray[$k]['GivenName'] . ' ' . $reginfoarray[$k]['ChineseName']
+?>
+									<tr>
+										<td class="labelfont">&nbsp;
+											<?php if ($currentname != $studentname) {echo $studentname; $currentname = $studentname;} ?>
+**/
+										<td align="left" class="labelfont">&nbsp;
+											<?php echo $reginfoarray[$k]['RegistrationPeriod']; ?>
+**/
+										<td class="labelfont">
+											<?php echo $reginfoarray[$k]['CourseName_E']; ?>
+**/
+**/
+<?php 
+	}
+?>
+**/
+**/
+**/
+**/
+**/
+**/
+<?php
+}
+
+
+
+
+**/
+ *
+ * @name 		GetManageRootStuff
+ * @args 		none
+ * @return	admin website template
+ * @desc		
+ *
+**/
+function GetManageRootStuff()
+{
+?>
+			<tr>
+**/
+**/
+			<tr>
+				<td align="right">
+					<table width="500" border="0" align="center">
+				    <tr>
+				      <td align="left">
+				      	update &nbsp;&nbsp;
+**/
+**/
+**/
+				    <tr>
+				      <td align="left">
+				      	set &nbsp;&nbsp;
+**/
+**/
+**/
+				    <tr>
+				      <td align="left">
+				      	= &nbsp;&nbsp;
+**/
+**/
+**/
+				    <tr>
+				      <td align="left">
+				      	where &nbsp;&nbsp;
+**/
+**/
+**/
+				    <tr>
+				      <td align="left">
+				      	= &nbsp;&nbsp;
+**/
+**/
+**/
+				    <tr>
+				      <td align="right"> 
+				        <input type="submit" name="SubmitRootStuff" value="Submit" class="bigwhitesubmit"
+**/
+**/
+**/
+				    <tr>
+				      <td align="right"> 
+				        <input type="button" name="BackToOptions" value="Cancel" class="smallwhitesubmit"
+**/
+**/
+**/
+**/
+**/
+**/
+			<tr>
+**/
+**/
+<?php
+}
+
+
+
+
+
+
+
+
+?>
+
+
+
+
+
+
+
+
+
+
+
