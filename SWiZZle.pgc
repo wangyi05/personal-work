@@ -1,0 +1,611 @@
+/*                                                                 
+ * Team name: SWiZZle                                              
+ * Team Member: Xin Sun                                            
+ *              Yi  Wang                                           
+ *              Ge  Zhang                                          
+ *              Lin Zhang     10374750                             
+ * File : SWiZZle.pgc                                              
+ * Desc : This is a program using Embedded SQL to read text written
+ *        in SQL MF queries and output the program written in      
+ *        Embedded SQL.                                            
+ *                                                                 
+ * Steps to run this program:                                      
+ * 1. Log in to PostgreSQL server                                  
+ * 2. Make sure you have the table 'sales' and file 'input.txt'                       
+ * 3. $ ecpg -I /usr/include/postgresql SWiZZle.pgc                
+ * 4. $ gcc -c -I /usr/include/postgresql/ SWiZZle.c               
+ * 5. $ gcc -L /usr/include/postgresql/ -lecpg -o SWiZZle SWiZZle.o
+ * 6. $ ./SWiZZle                                                  
+ */                                           
+#include <sys/stat.h>
+
+#include <error.h>
+#include <fcntl.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+#define BUFFSIZE        1024
+
+EXEC SQL BEGIN DECLARE SECTION;
+struct {
+    char     *table_name;
+    char     *column_name;
+    char     *is_nullable;
+    char     *data_type;
+}info;
+struct {
+    char     *table_name;
+    char     *column_name;
+    int       character_maximum_length;
+}info2;
+EXEC SQL END DECLARE SECTION;
+EXEC SQL INCLUDE sqlca;
+
+int  fd1;                          // input 
+int  fd2;                          // output
+int  nogv;                         // number of grouping variables(n)
+char agg_name[20][6];              // names of aggrigate functions(F)
+char grp_attr[20][10];             // names of grouping attributes(V)
+int  grp_len = 0;                  // number of grouping attributes
+char select_attr_init[20][100];    // strings to initialize the select attributes 
+char select_attr_name[20][20];     // names of select attributes(S)
+int  name_len[20];                 // length of each select attribute
+int  select_attr_type[20];         // types of select attributes
+int  select_attr_num = 0;          // number of select attributes
+char suchthat[20][50];             // suchthat conditions(¦Ò)
+char number[20];                   // integer to string
+
+void SWiZZle_write(char *);        // output through this function
+void check(char *);                // check the type of the variables through information schema
+
+void C_headcomment(void);          // output the head comment
+void C_include(void);              // output the include
+void C_hostvar(void);              // output host variables
+void C_input(void);                // read the input data
+void C_glb(void);                  // output global definations
+void C_main(void);                 // output main function
+void C_DBconn(void);               // output database connection
+void C_cursor(int);                // output cursor initialization
+void C_display(void);              // output the display function
+
+
+int 
+main(int argc, char* argv[])
+{
+    if ((fd1 = open("input.txt",O_RDONLY)) == -1) {
+        fprintf(stderr, "Unable to open input.txt: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    if ((fd2 = open("output.pgc",O_RDWR | O_CREAT | O_TRUNC,  S_IRUSR | S_IWUSR)) == -1) {
+        fprintf(stderr, "Unable to open output.txt: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    C_headcomment();
+    C_include();
+    C_hostvar();
+    C_input();
+    C_glb();
+    C_main();
+    C_display();
+    (void) close(fd1);
+    (void) close(fd2);
+    return 0;
+}
+
+void
+SWiZZle_write(char *text)
+{
+    if (write(fd2, text, strlen(text)) != strlen(text)) {
+        fprintf(stderr, "Unable to write: %s\n",
+                strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    return;
+}
+
+void
+C_headcomment(void)
+{
+    SWiZZle_write("/*                                                                 \n\0");
+    SWiZZle_write(" * Team name: SWiZZle                                              \n\0");
+    SWiZZle_write(" * Team Member: Xin Sun                                            \n\0");
+    SWiZZle_write(" *              Yi  Wang                                           \n\0");
+    SWiZZle_write(" *              Ge  Zhang                                          \n\0");
+    SWiZZle_write(" *              Lin Zhang     10374750                             \n\0");
+    SWiZZle_write(" * File : output.pgc                                               \n\0");
+    SWiZZle_write(" * Desc : This is a program using Embedded SQL to read text written\n\0");
+    SWiZZle_write(" *        in SQL MF queries and output the program written in      \n\0");
+    SWiZZle_write(" *        Embedded SQL.                                            \n\0");
+	SWiZZle_write(" *                                                                 \n\0");
+    SWiZZle_write(" * Steps to run this program:                                      \n\0");
+    SWiZZle_write(" * 1. Log in to PostgreSQL server                                  \n\0");
+    SWiZZle_write(" * 2. Make sure you have the table 'sales'                         \n\0");
+    SWiZZle_write(" * 3. $ ecpg -I /usr/include/postgresql output.pgc                 \n\0");
+    SWiZZle_write(" * 4. $ gcc -c -I /usr/include/postgresql/ output.c                \n\0");
+    SWiZZle_write(" * 5. $ gcc -L /usr/include/postgresql/ -lecpg -o output output.o  \n\0");
+    SWiZZle_write(" * 6. $ ./output                                                   \n\0");
+    SWiZZle_write(" */                                                                \n\0");
+    return;
+}
+
+void
+C_include(void)
+{
+    SWiZZle_write("#include <stdio.h>\n\0");
+    SWiZZle_write("#include <stdlib.h>\n\0");
+    SWiZZle_write("#include <string.h>\n\n\0");
+    return;
+}
+
+void
+C_hostvar(void)
+{
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    SWiZZle_write("// HOST VARIABLES definitions\n\0");
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    SWiZZle_write("EXEC SQL BEGIN DECLARE SECTION;\n\0");
+    SWiZZle_write("struct {\n\0");
+    SWiZZle_write("    char     *cust;\n\0");
+    SWiZZle_write("    char     *prod;\n\0");
+    SWiZZle_write("    int      dd;\n\0");
+    SWiZZle_write("    int      mm;\n\0");
+    SWiZZle_write("    int      yy;\n\0");
+    SWiZZle_write("    char     *state;\n\0");
+    SWiZZle_write("    int      quant;\n\0");
+    SWiZZle_write("}sale_rec;\n\0");
+    SWiZZle_write("EXEC SQL END DECLARE SECTION;\n\0");
+    SWiZZle_write("EXEC SQL INCLUDE sqlca;\n\n\0");
+    return;
+}
+
+void
+C_input(void)
+{
+    char *buf;
+    int n;
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    SWiZZle_write("// STRUCT definitions\n\0");
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    if ((buf = (char*)malloc((BUFFSIZE+1)*sizeof(char))) == NULL) {
+        fprintf(stderr, "Unable to allocate memory: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    SWiZZle_write("typedef struct {\n\0");
+    if ((n = read(fd1, buf, BUFFSIZE)) <= 0) {
+        fprintf(stderr, "Unable to read input.txt: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    buf[n] = '\0';
+
+    int len = 0;
+    int count = 0;
+    int grp_num = 0;
+    char * text;
+    if ((text = (char*)malloc((BUFFSIZE+1)*sizeof(char))) == NULL) {
+        fprintf(stderr, "Unable to allocate memory: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    if (strncmp(buf, "SELECT ATTRIBUTE(S):", 20) != 0) {
+        fprintf(stderr, "Syntax error!\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        buf = buf + 20;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    while(*buf != '\n') {
+        while(*buf != ',' && *buf != '\n') {
+            text[len] = *buf;
+            len++;
+            buf++;
+        }
+        if (text[len-1] == ' ')
+            text[len-1] = '\0';
+        else
+            text[len] = '\0';
+        check(text);
+        len = 0;
+        if (*buf == ',')
+            buf = buf + 2;
+    }
+    SWiZZle_write("}myrecord;\n\n\0");
+    buf++;
+    if (strncmp(buf, "NUMBER", 6) != 0) {
+        fprintf(stderr, "Syntax error!\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        buf = buf + 6;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    nogv = (int)*buf - 48;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    if (strncmp(buf, "GROUP", 5) != 0) {
+        fprintf(stderr, "Syntax error!\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        buf = buf + 5;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    len = 0;
+    while(*buf != '\n') {
+        while(*buf != ',' && *buf != '\n') {
+            grp_attr[count][len] = *buf;
+            len++;
+            buf++;
+        }
+        grp_len ++;
+        if (grp_attr[count][len-1] == ' ')
+            grp_attr[count][len-1] = '\0';
+        else
+            grp_attr[count][len] = '\0';
+        len = 0;
+        count++;
+        if (*buf == ',')
+            buf = buf + 2;
+    }
+    buf++;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    if (strncmp(buf, "SELECT", 6) != 0) {
+        fprintf(stderr, "Syntax error!\n");
+        exit(EXIT_FAILURE);
+    }
+    else
+        buf = buf + 6;
+    while (*buf && *buf != '\n')
+        buf++;
+    buf++;
+    len = 0;
+    count = 0;
+    while (*buf) {
+        if (grp_num != (int)*buf - 48)
+            count = 0;
+        grp_num = (int)*buf - 48;
+        buf = buf + 2;
+        while (*buf && *buf != '\n') {
+            suchthat[grp_num][len] = *buf;
+            len ++;
+            buf ++;
+        }
+        suchthat[grp_num][len] = '\0';
+        len = 0;
+        buf++;
+    }
+    return;
+}
+
+void
+check(char *text)
+{
+    char tmp[3];
+    char * endptr = NULL;
+    char * text2;
+    int agg_number, count = 0;
+    //----------------------------------------------------------------------
+    // DATABASE CONNECTION
+    //----------------------------------------------------------------------
+    EXEC SQL CONNECT TO sql_db USER postgres IDENTIFIED BY "postgres";
+    EXEC SQL WHENEVER sqlerror sqlprint;
+    EXEC SQL DECLARE mycursor CURSOR FOR 
+        SELECT table_name, column_name, is_nullable, data_type
+        FROM INFORMATION_SCHEMA.Columns 
+        WHERE table_name = 'sales';
+    EXEC SQL SET TRANSACTION read only;
+    // Open cursor
+    EXEC SQL OPEN mycursor;
+    // Fetch Data
+    EXEC SQL FETCH FROM mycursor INTO :info;
+
+
+    if ((text2 = (char*)malloc((strlen(text)+1)*sizeof(char))) == NULL) {
+        fprintf(stderr, "Unable to allocate memory: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+    strcpy(text2, text);
+    endptr = strchr(text2, '_');
+        if (endptr) {
+            while (*text2 != '_') {
+                tmp[count] = *text2;
+                count++;
+                text2++;
+            }
+            tmp[count] = '\0';
+            text2++;
+            agg_number = (int)*text2 -48;
+            while (*text2 != '_')
+                text2++;
+            strcpy(agg_name[agg_number], tmp);
+            text2++;
+        }
+    if (strncmp(tmp, "avg", 3) == 0) {
+        sprintf(number, "%d" , agg_number);
+        SWiZZle_write("    int     \0");
+        SWiZZle_write("count_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_\0");
+        SWiZZle_write(text2);
+        SWiZZle_write(";\n\0");
+    }
+    count = 0;
+    while (sqlca.sqlcode == 0) {
+        if (strcmp(info.column_name, text2) == 0)
+            break;
+        EXEC SQL FETCH FROM mycursor INTO :info;     // Fetch the rest rows
+    }
+    if (sqlca.sqlcode != 0) {
+        fprintf(stderr, "Can't find the column: %s.\n", text2);
+        exit(EXIT_FAILURE);
+    }
+    // Close cursor
+    EXEC SQL CLOSE mycursor;
+    SWiZZle_write("    \0");
+    if (strcmp(info.data_type, "character varying") == 0) {
+        SWiZZle_write("char    \0");
+        strcpy(select_attr_init[select_attr_num], "strcpy(record[i].\0");
+        strcat(select_attr_init[select_attr_num], text);
+        strcat(select_attr_init[select_attr_num], ", sale_rec.\0");
+        strcat(select_attr_init[select_attr_num], text);
+        strcat(select_attr_init[select_attr_num], ");\0");
+        strcpy(select_attr_name[select_attr_num], text);
+        select_attr_type[select_attr_num] = 1;
+        name_len[select_attr_num] = strlen(text);
+    }
+    else if (strcmp(info.data_type, "integer") == 0) {
+        SWiZZle_write("int     \0");
+        strcpy(select_attr_init[select_attr_num], "record[i].\0");
+        strcat(select_attr_init[select_attr_num], text);
+        if (strncmp(tmp, "min", 3) == 0) 
+            strcat(select_attr_init[select_attr_num], " = 10000;\0");
+        else
+            strcat(select_attr_init[select_attr_num], " = 0;\0");
+        if (strncmp(tmp, "avg", 3) == 0) {
+            strcat(select_attr_init[select_attr_num], "\n                \0");
+            strcat(select_attr_init[select_attr_num], "record[i].count_\0");
+            strcat(select_attr_init[select_attr_num], number);
+            strcat(select_attr_init[select_attr_num], "_\0");
+            strcat(select_attr_init[select_attr_num], text2);
+            strcat(select_attr_init[select_attr_num], " = 0;\0");    
+        }
+        strcpy(select_attr_name[select_attr_num], text);
+        select_attr_type[select_attr_num] = 0;
+        name_len[select_attr_num] = strlen(text);
+    }
+    SWiZZle_write(text);
+    select_attr_num ++;
+    if (strcmp(info.data_type, "character varying") == 0) {
+        EXEC SQL DECLARE mycursor2 CURSOR FOR 
+            SELECT table_name, column_name, character_maximum_length
+            FROM INFORMATION_SCHEMA.Columns 
+            WHERE table_name = 'sales';
+        EXEC SQL SET TRANSACTION read only;
+        // Open cursor
+        EXEC SQL OPEN mycursor2;
+        // Fetch Data
+        EXEC SQL FETCH FROM mycursor2 INTO :info2;
+        while (sqlca.sqlcode == 0) {
+            if (strcmp(info2.column_name, text2) == 0)
+                break;
+            EXEC SQL FETCH FROM mycursor2 INTO :info2;     // Fetch the rest rows
+        }
+        // Close cursor
+        EXEC SQL CLOSE mycursor2;
+        sprintf(number, "%d" , info2.character_maximum_length);
+        SWiZZle_write("[\0");
+        SWiZZle_write(number);
+        SWiZZle_write("]\0");
+    }
+    SWiZZle_write(";\n\0");
+    return;
+}
+
+void
+C_glb(void)
+{
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    SWiZZle_write("// GLOBAL definitions\n\0");
+    SWiZZle_write("//----------------------------------------------------------------------\n\0");
+    SWiZZle_write("void display(void);\n\0");
+    SWiZZle_write("myrecord record[500];\n\0");
+    SWiZZle_write("int record_len = 0;\n\0");
+    return;
+}
+
+void
+C_main(void)
+{
+    int i;
+    SWiZZle_write("\nint\n\0");
+    SWiZZle_write("main(int argc, char* argv[])\n\0");
+    SWiZZle_write("{\n\0");
+    SWiZZle_write("    int i;\n\0");
+    C_DBconn();
+    for (i=1; i<=nogv; i++)
+        C_cursor(i);
+    SWiZZle_write("    display();\n\0");
+    SWiZZle_write("    return 0;\n\0");
+    SWiZZle_write("}\n\0");
+    return;
+}
+
+void
+C_DBconn(void)
+{
+    SWiZZle_write("    //----------------------------------------------------------------------\n\0");
+    SWiZZle_write("    // DATABASE CONNECTION\n\0");
+    SWiZZle_write("    //----------------------------------------------------------------------\n\0");
+    SWiZZle_write("    EXEC SQL CONNECT TO lzhang25 USER lzhang25 IDENTIFIED BY \"lzhang25a4651237!\";\n\0");
+    SWiZZle_write("    EXEC SQL WHENEVER sqlerror sqlprint;\n\n\0");
+    return;
+}
+
+void
+C_cursor(int i)
+{
+    int count = 0;
+    sprintf(number, "%d" , i);
+    SWiZZle_write("    //----------------------------------------------------------------------\n\0");
+    SWiZZle_write("    // SET CURSOR\0");
+    SWiZZle_write(number);
+    SWiZZle_write("\n\0");
+    SWiZZle_write("    //----------------------------------------------------------------------\n\0");
+    SWiZZle_write("    EXEC SQL DECLARE mycursor\0");
+    SWiZZle_write(number);
+    SWiZZle_write(" CURSOR FOR SELECT * FROM sales;\n\0");
+    SWiZZle_write("    EXEC SQL SET TRANSACTION read only;\n\0");
+    SWiZZle_write("    EXEC SQL OPEN mycursor\0");
+    SWiZZle_write(number);
+    SWiZZle_write(";\n\0");
+    SWiZZle_write("    EXEC SQL FETCH FROM mycursor\0");
+    SWiZZle_write(number);
+    SWiZZle_write(" INTO :sale_rec;\n\0");
+    SWiZZle_write("    while (sqlca.sqlcode == 0) {\n\0");
+    SWiZZle_write("        if(\0");
+    SWiZZle_write(suchthat[i]);
+    SWiZZle_write(") {\n\0");
+    SWiZZle_write("            for (i=0; i<record_len; i++) {\n\0");
+    SWiZZle_write("                if(\0");
+    while (count < grp_len) {
+        if (count)
+          SWiZZle_write("&&\n                   \0");
+        SWiZZle_write("(strcmp(record[i].\0");
+        SWiZZle_write(grp_attr[count]);
+        SWiZZle_write(", sale_rec.\0");
+        SWiZZle_write(grp_attr[count]);
+        SWiZZle_write(") == 0)\0");
+        count++;
+    }
+    SWiZZle_write(") {\n\0");
+    SWiZZle_write("                    break;\n\0");
+    SWiZZle_write("                }\n\0");
+    SWiZZle_write("            }\n\0");
+    SWiZZle_write("            if (i == record_len) {\n\0");
+    count = 0;
+    while (count < select_attr_num) {
+        SWiZZle_write("                \0");
+        SWiZZle_write(select_attr_init[count]);
+        SWiZZle_write("\n\0");
+        count ++;
+    }
+    SWiZZle_write("                record_len ++;\n\0");
+    SWiZZle_write("            }\n\0");
+    if (strncmp(agg_name[i], "sum", 3) == 0) {
+        SWiZZle_write("            record[i].sum_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant += sale_rec.quant;\n\0");
+    }
+    else if (strncmp(agg_name[i], "count", 5) == 0) {
+        SWiZZle_write("            record[i].count_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant ++;\n\0");
+    }
+    else if (strncmp(agg_name[i], "avg", 3) == 0) {
+        SWiZZle_write("            record[i].avg_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant += sale_rec.quant;\n\0");
+        SWiZZle_write("            record[i].count_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant ++;\n\0");       
+    }
+    else if (strncmp(agg_name[i], "max", 3) == 0) {
+        SWiZZle_write("            if (sale_rec.quant > record[i].max_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant)\n\0");
+        SWiZZle_write("                record[i].max_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant = sale_rec.quant;\n\0");
+    }
+    else if (strncmp(agg_name[i], "min", 3) == 0) {
+        SWiZZle_write("            if (sale_rec.quant < record[i].min_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant)\n\0");
+        SWiZZle_write("                record[i].min_\0");
+        SWiZZle_write(number);
+        SWiZZle_write("_quant = sale_rec.quant;\n\0");   
+    }
+    SWiZZle_write("        }\n\0");
+    SWiZZle_write("        EXEC SQL FETCH FROM mycursor\0");
+    SWiZZle_write(number);
+    SWiZZle_write(" INTO :sale_rec;\n\0");
+    SWiZZle_write("    }\n\0");
+    SWiZZle_write("    EXEC SQL CLOSE mycursor\0");
+    SWiZZle_write(number);
+    SWiZZle_write(";\n\0");
+    return;
+}
+
+void
+C_display(void)
+{
+    int count = 0, columns = -5;
+    SWiZZle_write("\nvoid\n\0");
+    SWiZZle_write("display(void)\n\0");
+    SWiZZle_write("{\n\0");
+    SWiZZle_write("    int i;\n\0");
+    SWiZZle_write("    printf(\"REPORT\\n\");\n\0");
+    SWiZZle_write("    printf(\"\0");
+    while (count < select_attr_num) {
+        SWiZZle_write(select_attr_name[count]);
+        SWiZZle_write("     \0");
+        count ++;
+    }
+    SWiZZle_write("\\n\");\n\0");
+    count = 0;
+    while (count < select_attr_num) {
+        columns += name_len[count] + 5;
+        count ++;
+    }
+    sprintf(number, "%d" , columns);
+    SWiZZle_write("    for (i=0; i<\0");
+    SWiZZle_write(number);
+    SWiZZle_write(" ;i++)\n\0");
+    SWiZZle_write("        printf(\"-\");\n\0");
+    SWiZZle_write("    printf(\"\\n\");\n\0");
+    SWiZZle_write("    for(i=0; i<record_len; i++) {\n\0");
+    count = 0;
+    while (count <select_attr_num) {
+        columns = name_len[count];
+        SWiZZle_write("        printf(\"\%\0");
+        if (select_attr_type[count]) {
+            columns += 5;
+            sprintf(number, "%d" , columns);
+            SWiZZle_write("-");
+            SWiZZle_write(number);
+            SWiZZle_write("s\0");
+        }
+        else {
+            sprintf(number, "%d" , columns);
+            SWiZZle_write(number);
+            SWiZZle_write("d\0");
+            SWiZZle_write("     ");
+        }
+        SWiZZle_write("\", record[i].\0");
+        SWiZZle_write(select_attr_name[count]);
+        if (strncmp(select_attr_name[count], "avg", 3) == 0) {
+            number[0] = select_attr_name[count][4];
+            number[1] = '\0';
+            SWiZZle_write(" / record[i].count_\0");
+            SWiZZle_write(number);
+            SWiZZle_write("_quant\0");
+        }
+        SWiZZle_write(");\n\0");
+        count ++;
+    }
+    SWiZZle_write("        printf(\"\\n\");\n\0");
+    SWiZZle_write("    }\n\0");
+    SWiZZle_write("    return;\n\0");
+    SWiZZle_write("}\n\0");
+    return;
+}

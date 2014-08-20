@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!--<link rel="shortcut icon" href="../../docs-assets/ico/favicon.png">-->
+
+    <title>BIA660 Final Project</title>
+
+	<!-- CSS stylesheet -->
+    <link href="./dist/css/bootstrap.css" rel="stylesheet">
+    <link href="./css/framework.css" rel="stylesheet">
+	
+  </head>
+
+  <body>
+
+    <div class="container">
+      <div class="header">
+        <ul class="nav nav-pills pull-right" id="headtitle">
+          <li class="active title_btn" id="btn_1"><a href="javascript:void(0);">Intro</a></li>
+          <li class="title_btn" id="btn_2"><a href="javascript:void(0);">Project</a></li>
+          <!--<li><a href="#">Contact</a></li>-->
+        </ul>
+        <h3 class="text-muted">BIA660 Web Analysis</h3>
+		<h4 class="text-muted">Final Project</h4>
+      </div>
+
+      <div class="jumbotron" id="intro">
+        <h2 style="font-weight:bold">COURSE SELECTION USING</h2>
+		<h2 style="font-weight:bold">GREEDY ALGORITHM</h2>
+        <p class="lead" style="margin-top:50px;text-align:left">
+		In final project, we use greedy algorithm to help user find out the courses combination.<br/><br/>
+		We receive course tags as input, and return one or more course combinations which fit the tags with minimum training time.<br/><br/>
+		All the courses we used are from <b>Mooclist</b> according to the mid-term project of our group.
+		</p>
+      </div>
+	  
+	  <div class="jumbotron hidden" id="project">
+        <h2 style="font-weight:bold">COURSE SELECTION USING</h2>
+		<h2 style="font-weight:bold">GREEDY ALGORITHM</h2>
+		<form class="form-horizontal" role="form" style="margin-top:50px;text-align:left" method="get" action="./php/GA.php">
+			<div class="form-group">
+				<label for="tags" class="col-sm-2 control-label" style="width:37%">Tags:</label>
+				<div class="col-sm-6">
+					<input type="text" class="form-control" name="tags" id="tags" style="margin-top:13px"/>
+					<div class="list-group tag-dropdown hidden" style="font-size:15px;"></div>
+				</div>
+			</div>
+			<div class="form-group">
+				<label for="time" class="col-sm-2 control-label" style="width:37%">Expected Time:</label>
+				<div class="col-sm-6">
+					<input type="text" class="form-control" name="time" id="time" style="margin-top:13px"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-2 control-label" style="width:37%">If you want:</label>
+				<div class="col-sm-6">
+					<input type="button" class="btn btn-info" style="font-size:15px;padding:6px 12px;margin-top:13px" id="self" value="Self-paced"/>
+				</div>
+			</div>
+			<input type="hidden" name="self" value="void" id="self_val">
+			<div class="form-group">
+				<div class="row" style="margin-left:125px;margin-top:40px">
+					<div class="col-md-5"><button type="submit" class="btn btn-success" style="font-size:15px">Submit</button></div>
+					<div class="col-md-5"><button type="reset" class="btn btn-warning" style="font-size:15px" id="reset">Reset</button></div>
+				</div>
+			</div>
+		</form>
+      </div>
+
+      <div class="row marketing hidden">
+		<ul class="nav nav-tabs" id="list">
+			<li class="active" style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="A">A</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="B">B</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="C">C</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="D">D</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="E">E</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="F">F</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="G">G</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="H">H</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="I">I</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="J">J</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="K">K</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="L">L</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="M">M</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="N">N</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="O">O</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="P">P</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="Q">Q</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="R">R</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="S">S</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="T">T</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="U">U</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="V">V</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="W">W</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="X">X</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="Y">Y</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="Z">Z</a></li>
+			<li style="width:25px"><a href="javascript:void(0);" style="padding-left:7px" value="other">&</a></li>
+		</ul>
+		<div class="col-lg-2 list_item" id="1"></div>
+		<div class="col-lg-2 list_item" id="2"></div>
+		<div class="col-lg-2 list_item" id="3"></div>
+		<div class="col-lg-2 list_item" id="4"></div>
+		<div class="col-lg-2 list_item" id="5"></div>
+		<div class="col-lg-2 list_item" id="6"></div>
+      </div>
+
+      <div class="footer">
+        <p>&copy; Team3</p>
+		<p>Fei Feng, Yi Wang, Changshuo Gao, Xin Sun, Fangzhou Yan</p>
+      </div>
+
+    </div> <!-- /container -->
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+	<script type="text/javascript" src="./js/jquery-2.1.0.min.js"></script>
+	<script type="text/javascript">
+	$(document).ready(function(){
+		$(".title_btn").click(function(){
+			if(!$(this).hasClass("active")) {
+				$("#headtitle").find(".active").removeClass("active");
+				$(this).addClass("active");
+				if($(this).attr("id") == "btn_1") {
+					$("#intro").removeClass("hidden");
+					$("#project").addClass("hidden");
+					$(".marketing").addClass("hidden");
+				} else {
+					$("#intro").addClass("hidden");
+					$("#project").removeClass("hidden");
+					$(".marketing").removeClass("hidden");
+					ajax_tags("A");
+				}
+			}
+		});
+		
+		$("#self").click(function(){
+			if($(this).hasClass("btn-info")) {
+				$(this).removeClass("btn-info").addClass("btn-success");
+				$(this).val("√ self-paced");
+				$("#self_val").val("self");
+				$("#time").attr("disabled","disabled");
+			} else {
+				$(this).removeClass("btn-success").addClass("btn-info");
+				$(this).val("self-paced");
+				$("#self_val").val("void");
+				$("#time").removeAttr("disabled");
+			}
+		});
+		
+		$("#reset").click(function(){
+			if($("#self").hasClass("btn-success")) {
+				$("#self").removeClass("btn-success").addClass("btn-info").val("self-paced");
+				$("#self_val").val("void");
+				$("#time").removeAttr("disabled");
+			}
+		});
+		
+		$("#tags").keyup(function(){
+			var string = $(this).val();
+			$.ajax({ 
+				type: "post", 
+				url: "./php/findTags.php", 
+				dataType: "json",
+				data:{str:string},				
+				success: function (data,status) { 
+					var child = "";
+					var str = "";
+					$.each(data,function(idx,item){
+						if(idx == "list") {
+							$.each(item,function(idx,item){
+								child += '<a href="javascript:void(0);" class="list-group-item tag-item">' + item + '</a>';
+							});	
+						} else {
+							str = item;
+						}
+					})
+					$(".tag-dropdown").html(child);
+					$("a.tag-item").bind("mouseover",function(){
+						$(this).addClass("active");
+					}).bind("mouseout",function(){
+						$(this).removeClass("active");
+					}).click(function(){
+						var string = str+$(this).html();
+						$("#tags").val(string);	
+						$(".tag-dropdown").addClass("hidden");
+						$("#tags").focus();
+					});
+				}, 
+				error: function (XMLHttpRequest, textStatus, errorThrown) { 
+					alert(errorThrown); 
+				} 
+			});
+			if($(".tag-dropdown").hasClass("hidden")) {
+				$(".tag-dropdown").removeClass("hidden");
+			}
+		}).blur(function(){
+			var count=0;
+			$(".tag-dropdown").find("a").each(function(){
+				if($(this).hasClass("active")) {
+					count = 1;
+					return false;
+				}
+			});
+			if(count == 0) {
+				if(!$(".tag-dropdown").hasClass("hidden")) {
+					$(".tag-dropdown").addClass("hidden");
+				}
+			}
+		});
+		
+		
+		
+		$("#list").children("li").click(function(){
+			$("#list").find(".active").removeClass("active");
+			$(this).addClass("active");
+			var string = $(this).find("a").html();
+			ajax_tags(string);
+		});
+	});
+	function ajax_tags(string){
+			$.ajax({ 
+				type: "post", 
+				url: "./php/findTagsByInit.php", 
+				dataType: "json",
+				data:{str:string},				
+				success: function (data,status) { 
+					var num = 1;
+					$(".list_item").empty();
+					$.each(data,function(idx,item){
+						$("<h5 class='list_items'>"+item+"</h5>").appendTo("#"+num);
+						if(num < 6) {
+							num ++;
+						} else {
+							num = 1;
+						}
+					});
+					$(".list_items").bind("mouseover",function(){
+						$(this).addClass("selected");
+					})
+					.bind("mouseout",function(){
+						$(this).removeClass("selected");
+					})
+					.click(function(){
+						var s = $("#tags").val();
+						if(s == "") {
+							s += $(this).html();
+						} else {
+							s += ","+$(this).html();
+						}
+						$("#tags").val(s).focus();
+					});
+				}, 
+				error: function (XMLHttpRequest, textStatus, errorThrown) { 
+					alert(errorThrown); 
+				} 
+			});
+		}
+	</script>
+  </body>
+</html>
